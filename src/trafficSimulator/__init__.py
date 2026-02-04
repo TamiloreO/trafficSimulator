@@ -5,7 +5,10 @@ from .core.geometry.cubic_curve import CubicCurve
 from .core.vehicle import Vehicle
 from .core.vehicle_generator import VehicleGenerator
 
+from .core.road_network import RoadNetwork
+from .core.vehicle_manager import VehicleManager
 from .core.simulation import Simulation
+
 from .visualizer.window import Window
 
 from .core.traffic_control import (
