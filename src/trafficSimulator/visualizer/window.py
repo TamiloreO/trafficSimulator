@@ -268,6 +268,22 @@ class Window:
             dpg.draw_polyline(segment.points, color=(180, 180, 220), thickness=3.5*self.zoom, parent="Canvas")
             # dpg.draw_arrow(segment.points[-1], segment.points[-2], thickness=0, size=2, color=(0, 0, 0, 50), parent="Canvas")
 
+    def draw_traffic_lights(self):
+        """Draw traffic lights as colored circles at their positions."""
+        for light in self.simulation.get_traffic_lights():
+            position = light.get_position()
+            color = light.get_color()
+            radius = 1.5  # radius in world units
+            
+            dpg.draw_circle(
+                center=position,
+                radius=radius,
+                color=(0, 0, 0),  # black border
+                fill=color,
+                thickness=0.3,
+                parent="Canvas"
+            )
+
     def draw_vehicles(self):
         for segment in self.simulation.segments:
             for vehicle_id in segment.vehicles:
@@ -312,6 +328,7 @@ class Window:
         self.draw_grid(unit=10)
         self.draw_grid(unit=50)
         self.draw_segments()
+        self.draw_traffic_lights()
         self.draw_vehicles()
 
         # Apply transformations

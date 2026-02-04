@@ -7,3 +7,14 @@ from .core.vehicle_generator import VehicleGenerator
 
 from .core.simulation import Simulation
 from .visualizer.window import Window
+
+from .core.traffic_control import (
+    LightState,
+    TrafficLight,
+    TrafficLightController,
+    TrafficLightGroup,
+    Phase,
+    PhaseSequence,
+    SignalTiming,
+    TrafficLightFactory,
+)
