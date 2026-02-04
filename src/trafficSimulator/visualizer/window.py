@@ -290,6 +290,20 @@ class Window:
                 rotate = dpg.create_rotation_matrix(heading, [0, 0, 1])
                 dpg.apply_transform(node, translate*rotate)
 
+    def draw_traffic_lights(self):
+        traffic_lights = self.simulation.get_traffic_lights()
+        for light in traffic_lights:
+            position = light.get_position()
+            color = light.get_color()
+            radius = 2.0
+            dpg.draw_circle(
+                center=position,
+                radius=radius,
+                color=color,
+                fill=color,
+                parent="Canvas"
+            )
+
     def apply_transformation(self):
         screen_center = dpg.create_translation_matrix([self.canvas_width/2, self.canvas_height/2, -0.01])
         translate = dpg.create_translation_matrix(self.offset)
@@ -312,6 +326,7 @@ class Window:
         self.draw_grid(unit=10)
         self.draw_grid(unit=50)
         self.draw_segments()
+        self.draw_traffic_lights()
         self.draw_vehicles()
 
         # Apply transformations
