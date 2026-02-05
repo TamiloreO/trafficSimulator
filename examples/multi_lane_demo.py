@@ -6,6 +6,12 @@ change lanes when:
 1. There is a slower vehicle ahead
 2. There is space available in an adjacent lane
 3. The adjacent lane has sufficient gap (front and rear)
+
+The Statistics panel in the UI shows:
+- Completed: Number of vehicles that finished their path
+- Avg Travel Time: Average time vehicles took to complete
+- Avg Speed: Average speed of completed vehicles
+- Lane Changes: Total number of lane changes performed
 """
 import trafficSimulator as ts
 
