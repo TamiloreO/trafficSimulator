@@ -269,20 +269,40 @@ class Window:
             # dpg.draw_arrow(segment.points[-1], segment.points[-2], thickness=0, size=2, color=(0, 0, 0, 50), parent="Canvas")
 
     def draw_vehicles(self):
-        for segment in self.simulation.segments:
+        for segment_idx, segment in enumerate(self.simulation.segments):
             for vehicle_id in segment.vehicles:
                 vehicle = self.simulation.vehicles[vehicle_id]
                 progress = vehicle.x / segment.get_length()
+                progress = min(max(progress, 0), 1)
 
                 position = segment.get_point(progress)
                 heading = segment.get_heading(progress)
+                
+                if vehicle.is_changing_lane and vehicle.lane_change_source_segment is not None:
+                    source_seg = self.simulation.segments[vehicle.lane_change_source_segment]
+                    target_seg = self.simulation.segments[vehicle.lane_change_target_segment]
+                    
+                    src_progress = min(max(vehicle.x / source_seg.get_length(), 0), 1)
+                    tgt_progress = min(max(vehicle.x / target_seg.get_length(), 0), 1)
+                    
+                    src_pos = source_seg.get_point(src_progress)
+                    tgt_pos = target_seg.get_point(tgt_progress)
+                    
+                    lc_progress = vehicle.lane_change_progress
+                    position = (
+                        src_pos[0] + (tgt_pos[0] - src_pos[0]) * lc_progress,
+                        src_pos[1] + (tgt_pos[1] - src_pos[1]) * lc_progress
+                    )
 
                 node = dpg.add_draw_node(parent="Canvas")
+                
+                color = (0, 0, 255) if not vehicle.is_changing_lane else (255, 165, 0)
+                
                 dpg.draw_line(
                     (0, 0),
                     (vehicle.l, 0),
                     thickness=1.76*self.zoom,
-                    color=(0, 0, 255),
+                    color=color,
                     parent=node
                 )
 

@@ -3,6 +3,8 @@ from .geometry.quadratic_curve import QuadraticCurve
 from .geometry.cubic_curve import CubicCurve
 from .geometry.segment import Segment
 from .vehicle import Vehicle
+from .road import Road
+from .lane_change import LaneChangeStrategy
 
 
 class Simulation:
@@ -10,11 +12,13 @@ class Simulation:
         self.segments = []
         self.vehicles = {}
         self.vehicle_generator = []
+        self.roads = []
+        self._segment_to_road_map = {}
+        self.lane_change_strategy = LaneChangeStrategy()
 
         self.t = 0.0
         self.frame_count = 0
         self.dt = 1/60  
-
 
     def add_vehicle(self, veh):
         self.vehicles[veh.id] = veh
@@ -27,6 +31,13 @@ class Simulation:
     def add_vehicle_generator(self, gen):
         self.vehicle_generator.append(gen)
 
+    def add_road(self, road):
+        self.roads.append(road)
+        for seg_idx in road._segment_indices:
+            self._segment_to_road_map[seg_idx] = road
+
+    def get_road_for_segment(self, segment_index):
+        return self._segment_to_road_map.get(segment_index)
     
     def create_vehicle(self, **kwargs):
         veh = Vehicle(kwargs)
@@ -48,12 +59,19 @@ class Simulation:
         gen = VehicleGenerator(kwargs)
         self.add_vehicle_generator(gen)
 
+    def create_road(self, segment_indices):
+        road = Road(segment_indices)
+        self.add_road(road)
+        return road
 
     def run(self, steps):
         for _ in range(steps):
             self.update()
 
     def update(self):
+        # Process lane changes first
+        self._process_lane_changes()
+        
         # Update vehicles
         for segment in self.segments:
             if len(segment.vehicles) != 0:
@@ -63,23 +81,15 @@ class Simulation:
 
         # Check roads for out of bounds vehicle
         for segment in self.segments:
-            # If road has no vehicles, continue
             if len(segment.vehicles) == 0: continue
-            # If not
             vehicle_id = segment.vehicles[0]
             vehicle = self.vehicles[vehicle_id]
-            # If first vehicle is out of road bounds
             if vehicle.x >= segment.get_length():
-                # If vehicle has a next road
                 if vehicle.current_road_index + 1 < len(vehicle.path):
-                    # Update current road to next road
                     vehicle.current_road_index += 1
-                    # Add it to the next road
                     next_road_index = vehicle.path[vehicle.current_road_index]
                     self.segments[next_road_index].vehicles.append(vehicle_id)
-                # Reset vehicle properties
                 vehicle.x = 0
-                # In all cases, remove it from its road
                 segment.vehicles.popleft() 
 
         # Update vehicle generators
@@ -88,3 +98,44 @@ class Simulation:
         # Increment time
         self.t += self.dt
         self.frame_count += 1
+
+    def _process_lane_changes(self):
+        for vehicle_id, vehicle in self.vehicles.items():
+            # Update ongoing lane changes
+            if vehicle.is_changing_lane:
+                completed = vehicle.update_lane_change(self.dt)
+                if completed:
+                    self._complete_lane_change(vehicle)
+                continue
+            
+            # Check if vehicle should start a lane change
+            target_segment = self.lane_change_strategy.should_change_lane(vehicle, self)
+            if target_segment is not None:
+                current_segment_index = vehicle.path[vehicle.current_road_index]
+                self._start_lane_change(vehicle, current_segment_index, target_segment)
+
+    def _start_lane_change(self, vehicle, source_segment_index, target_segment_index):
+        vehicle.start_lane_change(source_segment_index, target_segment_index, self.t)
+        
+        # Update path to use target segment
+        vehicle.path[vehicle.current_road_index] = target_segment_index
+        
+        # Move vehicle from source to target segment
+        source_segment = self.segments[source_segment_index]
+        target_segment = self.segments[target_segment_index]
+        
+        source_segment.remove_vehicle(vehicle)
+        
+        # Insert in correct position in target segment (sorted by x)
+        inserted = False
+        for i, vid in enumerate(target_segment.vehicles):
+            if self.vehicles[vid].x > vehicle.x:
+                target_segment.vehicles.insert(i, vehicle.id)
+                inserted = True
+                break
+        if not inserted:
+            target_segment.vehicles.append(vehicle.id)
+
+    def _complete_lane_change(self, vehicle):
+        vehicle.is_changing_lane = False
+        vehicle.lane_change_progress = 1.0
