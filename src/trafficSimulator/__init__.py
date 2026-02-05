@@ -7,3 +7,23 @@ from .core.vehicle_generator import VehicleGenerator
 
 from .core.simulation import Simulation
 from .visualizer.window import Window
+
+from .core.road import (
+    Road,
+    RoadBuilder,
+    LaneConfiguration,
+    LaneType,
+    RoadDirection,
+    create_straight_road,
+    create_curved_road,
+)
+
+from .core.lane_change import (
+    LaneChangeController,
+    LaneChangeParameters,
+    LaneChangeDirection,
+    LaneChangeState,
+    LaneChangeContext,
+    LaneChangeContextBuilder,
+    LaneChangeEvaluator,
+)

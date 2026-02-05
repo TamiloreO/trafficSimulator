@@ -1,4 +1,6 @@
 import dearpygui.dearpygui as dpg
+import math
+from typing import Tuple, Optional
 
 
 class Window:
@@ -14,6 +16,13 @@ class Window:
         self.is_dragging = False
         self.old_offset = (0, 0)
         self.zoom_speed = 1
+        
+        # Visual settings
+        self.lane_width = 3.5
+        self.road_color = (180, 180, 220)
+        self.lane_marking_color = (255, 255, 255)
+        self.vehicle_color = (0, 0, 255)
+        self.vehicle_changing_lane_color = (255, 165, 0)  # Orange for lane changing
 
         self.setup()
         self.setup_themes()
@@ -33,16 +42,12 @@ class Window:
                 dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1, category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_WindowBorderSize, 0, category=dpg.mvThemeCat_Core)
-                # dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, (8, 6), category=dpg.mvThemeCat_Core)
                 dpg.add_theme_color(dpg.mvThemeCol_Button, (90, 90, 95))
                 dpg.add_theme_color(dpg.mvThemeCol_Header, (0, 91, 140))
             with dpg.theme_component(dpg.mvInputInt):
                 dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (90, 90, 95), category=dpg.mvThemeCat_Core)
-            #     dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
 
         dpg.bind_theme(global_theme)
-
-        # dpg.show_style_editor()
 
         with dpg.theme(tag="RunButtonTheme"):
             with dpg.theme_component(dpg.mvButton):
@@ -103,6 +108,14 @@ class Window:
                     with dpg.table_row():
                         dpg.add_text("Frame:")
                         dpg.add_text("_", tag="FrameStatus")
+                    
+                    with dpg.table_row():
+                        dpg.add_text("Vehicles:")
+                        dpg.add_text("_", tag="VehicleCount")
+                    
+                    with dpg.table_row():
+                        dpg.add_text("Roads:")
+                        dpg.add_text("_", tag="RoadCount")
             
             
             with dpg.collapsing_header(label="Camera Control", default_open=True):
@@ -133,7 +146,6 @@ class Window:
         dpg.set_viewport_resize_callback(self.resize_windows)
 
     def update_panels(self):
-        # Update status text
         if self.is_running:
             dpg.set_value("StatusText", "Running")
             dpg.configure_item("StatusText", color=(0, 255, 0))
@@ -141,12 +153,10 @@ class Window:
             dpg.set_value("StatusText", "Stopped")
             dpg.configure_item("StatusText", color=(255, 0, 0))
         
-        # Update time and frame text
         dpg.set_value("TimeStatus", f"{self.simulation.t:.2f}s")
         dpg.set_value("FrameStatus", self.simulation.frame_count)
-
-        
-
+        dpg.set_value("VehicleCount", len(self.simulation.vehicles))
+        dpg.set_value("RoadCount", len(self.simulation.roads))
 
     def mouse_down(self):
         if not self.is_dragging:
@@ -264,31 +274,116 @@ class Window:
             )
 
     def draw_segments(self):
+        """Draw all segments (lanes)."""
         for segment in self.simulation.segments:
-            dpg.draw_polyline(segment.points, color=(180, 180, 220), thickness=3.5*self.zoom, parent="Canvas")
-            # dpg.draw_arrow(segment.points[-1], segment.points[-2], thickness=0, size=2, color=(0, 0, 0, 50), parent="Canvas")
-
-    def draw_vehicles(self):
-        for segment in self.simulation.segments:
-            for vehicle_id in segment.vehicles:
-                vehicle = self.simulation.vehicles[vehicle_id]
-                progress = vehicle.x / segment.get_length()
-
-                position = segment.get_point(progress)
-                heading = segment.get_heading(progress)
-
-                node = dpg.add_draw_node(parent="Canvas")
-                dpg.draw_line(
-                    (0, 0),
-                    (vehicle.l, 0),
-                    thickness=1.76*self.zoom,
-                    color=(0, 0, 255),
-                    parent=node
+            dpg.draw_polyline(
+                segment.points, 
+                color=self.road_color, 
+                thickness=3.5*self.zoom, 
+                parent="Canvas"
+            )
+    
+    def draw_roads(self):
+        """Draw multi-lane roads with lane markings."""
+        drawn_segments = set()
+        
+        # Draw roads with proper lane markings
+        for road_id, road in self.simulation.roads.items():
+            for lane_index, lane in enumerate(road.lanes):
+                # Draw the lane
+                dpg.draw_polyline(
+                    lane.points, 
+                    color=self.road_color, 
+                    thickness=3.5*self.zoom, 
+                    parent="Canvas"
+                )
+                
+                # Mark segment as drawn
+                for seg_idx, rid in self.simulation.segment_to_road.items():
+                    if rid == road_id:
+                        lane_idx = self.simulation.segment_to_lane.get(seg_idx, 0)
+                        if lane_idx == lane_index:
+                            drawn_segments.add(seg_idx)
+                
+                # Draw lane markings between lanes
+                if lane_index < road.lane_count - 1:
+                    self._draw_lane_marking(lane, road.lanes[lane_index + 1])
+        
+        # Draw any remaining segments not part of roads
+        for i, segment in enumerate(self.simulation.segments):
+            if i not in drawn_segments:
+                dpg.draw_polyline(
+                    segment.points, 
+                    color=self.road_color, 
+                    thickness=3.5*self.zoom, 
+                    parent="Canvas"
+                )
+    
+    def _draw_lane_marking(self, lane1, lane2):
+        """Draw dashed lane marking between two adjacent lanes."""
+        num_points = min(len(lane1.points), len(lane2.points))
+        dash_length = 3
+        gap_length = 3
+        
+        for i in range(0, num_points - 1, dash_length + gap_length):
+            end_i = min(i + dash_length, num_points - 1)
+            
+            points = []
+            for j in range(i, end_i + 1):
+                p1 = lane1.points[j]
+                p2 = lane2.points[j]
+                mid = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+                points.append(mid)
+            
+            if len(points) >= 2:
+                dpg.draw_polyline(
+                    points,
+                    color=self.lane_marking_color,
+                    thickness=0.3 * self.zoom,
+                    parent="Canvas"
                 )
 
-                translate = dpg.create_translation_matrix(position)
-                rotate = dpg.create_rotation_matrix(heading, [0, 0, 1])
-                dpg.apply_transform(node, translate*rotate)
+    def draw_vehicles(self):
+        """Draw all vehicles with lane change visualization."""
+        for segment_idx, segment in enumerate(self.simulation.segments):
+            for vehicle_id in segment.vehicles:
+                vehicle = self.simulation.vehicles[vehicle_id]
+                self._draw_vehicle(segment, segment_idx, vehicle)
+    
+    def _draw_vehicle(self, segment, segment_idx: int, vehicle):
+        """Draw a single vehicle with lane change offset if applicable."""
+        progress = vehicle.x / segment.get_length()
+        progress = max(0, min(1, progress))
+        
+        position = segment.get_point(progress)
+        heading = segment.get_heading(progress)
+        
+        # Calculate lateral offset for lane changing vehicles
+        lateral_offset = 0.0
+        if vehicle.is_changing_lanes:
+            lateral_offset = vehicle.lane_offset * self.lane_width
+        
+        # Apply lateral offset perpendicular to heading
+        if lateral_offset != 0:
+            offset_x = -math.sin(heading) * lateral_offset
+            offset_y = math.cos(heading) * lateral_offset
+            position = (position[0] + offset_x, position[1] + offset_y)
+        
+        # Choose color based on lane change state
+        color = self.vehicle_changing_lane_color if vehicle.is_changing_lanes else self.vehicle_color
+        
+        node = dpg.add_draw_node(parent="Canvas")
+        dpg.draw_line(
+            (0, 0),
+            (vehicle.l, 0),
+            thickness=1.76*self.zoom,
+            color=color,
+            parent=node
+        )
+
+        translate = dpg.create_translation_matrix(position)
+        rotate = dpg.create_rotation_matrix(heading, [0, 0, 1])
+        dpg.apply_transform(node, translate*rotate)
 
     def apply_transformation(self):
         screen_center = dpg.create_translation_matrix([self.canvas_width/2, self.canvas_height/2, -0.01])
@@ -311,7 +406,9 @@ class Window:
         self.draw_axes()
         self.draw_grid(unit=10)
         self.draw_grid(unit=50)
-        self.draw_segments()
+        
+        # Draw roads (handles both multi-lane roads and standalone segments)
+        self.draw_roads()
         self.draw_vehicles()
 
         # Apply transformations
