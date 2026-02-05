@@ -49,6 +49,9 @@ class Vehicle:
         
         # Lane offset for visual representation during lane change
         self.lane_offset: float = 0.0
+        
+        # Tracking
+        self.spawn_time: float = 0.0
 
     def init_properties(self):
         self.sqrt_ab = 2*np.sqrt(self.a_max*self.b_max)

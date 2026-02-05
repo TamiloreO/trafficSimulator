@@ -117,6 +117,20 @@ class Window:
                         dpg.add_text("Roads:")
                         dpg.add_text("_", tag="RoadCount")
             
+            with dpg.collapsing_header(label="Statistics", default_open=True):
+                
+                with dpg.table(header_row=False):
+                    dpg.add_table_column()
+                    dpg.add_table_column()
+                    
+                    with dpg.table_row():
+                        dpg.add_text("Completed:")
+                        dpg.add_text("0", tag="CompletedCount")
+                    
+                    with dpg.table_row():
+                        dpg.add_text("Avg Travel Time:")
+                        dpg.add_text("0.00s", tag="AvgTravelTime")
+            
             
             with dpg.collapsing_header(label="Camera Control", default_open=True):
     
@@ -157,6 +171,10 @@ class Window:
         dpg.set_value("FrameStatus", self.simulation.frame_count)
         dpg.set_value("VehicleCount", len(self.simulation.vehicles))
         dpg.set_value("RoadCount", len(self.simulation.roads))
+        
+        # Update statistics
+        dpg.set_value("CompletedCount", self.simulation.stats.vehicles_completed)
+        dpg.set_value("AvgTravelTime", f"{self.simulation.stats.average_travel_time:.2f}s")
 
     def mouse_down(self):
         if not self.is_dragging:

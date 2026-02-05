@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, field
 from .vehicle_generator import VehicleGenerator
 from .geometry.quadratic_curve import QuadraticCurve
 from .geometry.cubic_curve import CubicCurve
@@ -13,6 +14,19 @@ from .lane_change import (
 )
 
 
+@dataclass
+class SimulationStats:
+    """Tracks simulation statistics."""
+    vehicles_completed: int = 0
+    total_travel_time: float = 0.0
+    
+    @property
+    def average_travel_time(self) -> float:
+        if self.vehicles_completed == 0:
+            return 0.0
+        return self.total_travel_time / self.vehicles_completed
+
+
 class Simulation:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         config = config or {}
@@ -23,8 +37,8 @@ class Simulation:
         
         # Road management
         self.roads: Dict[str, Road] = {}
-        self.segment_to_road: Dict[int, str] = {}  # Maps segment index to road ID
-        self.segment_to_lane: Dict[int, int] = {}  # Maps segment index to lane index within road
+        self.segment_to_road: Dict[int, str] = {}
+        self.segment_to_lane: Dict[int, int] = {}
         
         # Lane change management
         lane_change_params = LaneChangeParameters(
@@ -33,12 +47,17 @@ class Simulation:
         self.lane_change_controller = LaneChangeController(lane_change_params)
         self.enable_lane_changes = config.get('enable_lane_changes', True)
 
+        # Statistics tracking
+        self.stats = SimulationStats()
+        self._vehicles_to_remove: List[Any] = []
+
         self.t = 0.0
         self.frame_count = 0
         self.dt = 1/60
 
     def add_vehicle(self, veh: Vehicle):
         self.vehicles[veh.id] = veh
+        veh.spawn_time = self.t
         if len(veh.path) > 0:
             segment_index = veh.path[0]
             self.segments[segment_index].add_vehicle(veh)
@@ -137,6 +156,9 @@ class Simulation:
         
         # Check roads for out of bounds vehicles
         self._handle_segment_transitions()
+        
+        # Clean up completed vehicles
+        self._cleanup_completed_vehicles()
 
         # Update vehicle generators
         for gen in self.vehicle_generator:
@@ -145,6 +167,24 @@ class Simulation:
         # Increment time
         self.t += self.dt
         self.frame_count += 1
+    
+    def _cleanup_completed_vehicles(self):
+        """Remove vehicles that have completed their paths and update stats."""
+        for vehicle_id in self._vehicles_to_remove:
+            if vehicle_id in self.vehicles:
+                vehicle = self.vehicles[vehicle_id]
+                travel_time = self.t - getattr(vehicle, 'spawn_time', 0)
+                self.stats.vehicles_completed += 1
+                self.stats.total_travel_time += travel_time
+                
+                # Clean up lane change state
+                self.lane_change_controller.cancel_lane_change(vehicle_id)
+                if vehicle_id in self.lane_change_controller.cooldowns:
+                    del self.lane_change_controller.cooldowns[vehicle_id]
+                
+                del self.vehicles[vehicle_id]
+        
+        self._vehicles_to_remove.clear()
 
     def _update_vehicle_movements(self):
         """Update vehicle positions based on car-following model."""
@@ -409,6 +449,10 @@ class Simulation:
                     if next_road_index in self.segment_to_road:
                         vehicle.current_road_id = self.segment_to_road[next_road_index]
                         vehicle.current_lane_index = self.segment_to_lane.get(next_road_index, 0)
+                    
+                    vehicle.x = 0
+                else:
+                    # Vehicle completed its path - mark for removal
+                    self._vehicles_to_remove.append(vehicle_id)
                 
-                vehicle.x = 0
                 segment.vehicles.popleft()
