@@ -1,4 +1,3 @@
-file_text
 """
 Tests for the vehicle type system.
 
@@ -292,10 +291,3 @@ class TestVehicleGeneratorIntegration:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
-output
-Existing file was successfully overwritten at /tmp/inputs/trafficSimulator/tests/test_vehicle_types.py
-
-Update the example file to use string-based types:
-str_replace_based_edit_tool
-command
-create

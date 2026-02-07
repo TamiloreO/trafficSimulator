@@ -1,4 +1,3 @@
-file_text
 """
 Traffic Simulator
 =================
@@ -62,10 +61,3 @@ from .core.simulation import Simulation
 
 # Visualization
 from .visualizer.window import Window
-output
-Existing file was successfully overwritten at /tmp/inputs/trafficSimulator/src/trafficSimulator/__init__.py
-
-Now update the tests:
-str_replace_based_edit_tool
-command
-create

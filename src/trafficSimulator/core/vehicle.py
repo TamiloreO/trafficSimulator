@@ -215,10 +215,4 @@ def create_vehicle(vehicle_type: str, **kwargs) -> Vehicle:
     """
     config = {'vehicle_type': vehicle_type, **kwargs}
     return Vehicle(config)
-output
-Existing file was successfully overwritten at /tmp/inputs/trafficSimulator/src/trafficSimulator/core/vehicle.py
 
-Now update the vehicle generator to work with the new string-based system:
-str_replace_based_edit_tool
-command
-create

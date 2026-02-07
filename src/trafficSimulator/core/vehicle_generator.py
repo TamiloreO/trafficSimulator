@@ -1,4 +1,3 @@
-file_text
 """
 Vehicle Generator Module
 ========================
@@ -180,10 +179,3 @@ class VehicleGenerator:
                 self.last_added_time = simulation.t
             
             self.upcoming_vehicle = self.generate_vehicle()
-output
-Existing file was successfully overwritten at /tmp/inputs/trafficSimulator/src/trafficSimulator/core/vehicle_generator.py
-
-Update the `__init__.py` to export the new interfaces:
-str_replace_based_edit_tool
-command
-create

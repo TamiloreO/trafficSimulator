@@ -1,4 +1,3 @@
-file_text
 """
 Example: Mixed Traffic Simulation
 =================================
@@ -55,7 +54,3 @@ sim.create_vehicle_generator(
 win = ts.Window(sim)
 win.run()
 win.show()
-output
-Existing file was successfully overwritten at /tmp/inputs/trafficSimulator/examples/test_mixed_traffic.py
-
-Now reinstall the package and run the tests:

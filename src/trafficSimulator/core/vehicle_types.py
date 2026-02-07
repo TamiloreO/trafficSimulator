@@ -332,4 +332,3 @@ def validate_registry_integrity() -> None:
     for vehicle_type, specs in VEHICLE_SPECS.items():
         _validate_specs(vehicle_type, specs)
         _validate_color_exists(vehicle_type)
-output
