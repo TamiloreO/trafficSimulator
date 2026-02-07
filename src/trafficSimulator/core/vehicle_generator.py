@@ -1,5 +1,15 @@
-from .vehicle import Vehicle
+from .vehicle import Vehicle, Car, Truck, Bus, Motorcycle
+from .vehicle_types import VehicleType
 from numpy.random import randint
+
+
+VEHICLE_CLASS_MAP = {
+    VehicleType.CAR: Car,
+    VehicleType.TRUCK: Truck,
+    VehicleType.BUS: Bus,
+    VehicleType.MOTORCYCLE: Motorcycle,
+}
+
 
 class VehicleGenerator:
     def __init__(self, config={}):
@@ -31,7 +41,19 @@ class VehicleGenerator:
         for (weight, config) in self.vehicles:
             r -= weight
             if r <= 0:
-                return Vehicle(config)
+                return self._create_vehicle(config)
+
+    def _create_vehicle(self, config):
+        """Create a vehicle based on the config, using the appropriate class."""
+        vehicle_type = config.get('vehicle_type')
+        
+        if vehicle_type:
+            if isinstance(vehicle_type, str):
+                vehicle_type = VehicleType(vehicle_type)
+            vehicle_class = VEHICLE_CLASS_MAP.get(vehicle_type, Vehicle)
+            return vehicle_class(config)
+        
+        return Vehicle(config)
 
     def update(self, simulation):
         """Add vehicles"""

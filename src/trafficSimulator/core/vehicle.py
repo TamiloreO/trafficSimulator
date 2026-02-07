@@ -1,5 +1,7 @@
 import uuid
 import numpy as np
+from .vehicle_types import VehicleType, get_vehicle_specs, get_vehicle_color
+
 
 class Vehicle:
     def __init__(self, config={}):
@@ -10,13 +12,19 @@ class Vehicle:
         for attr, val in config.items():
             setattr(self, attr, val)
 
+        # Apply vehicle type specifications if specified
+        if 'vehicle_type' in config:
+            self.apply_vehicle_type(config['vehicle_type'])
+
         # Calculate properties
         self.init_properties()
         
     def set_default_config(self):    
         self.id = uuid.uuid4()
+        self.vehicle_type = VehicleType.CAR
 
         self.l = 4
+        self.w = 1.8
         self.s0 = 4
         self.T = 1
         self.v_max = 16.6
@@ -30,6 +38,21 @@ class Vehicle:
         self.v = 0
         self.a = 0
         self.stopped = False
+
+        self.color = get_vehicle_color(VehicleType.CAR)
+
+    def apply_vehicle_type(self, vehicle_type):
+        """Apply specifications based on vehicle type."""
+        if isinstance(vehicle_type, str):
+            vehicle_type = VehicleType(vehicle_type)
+        
+        self.vehicle_type = vehicle_type
+        specs = get_vehicle_specs(vehicle_type)
+        
+        for attr, val in specs.items():
+            setattr(self, attr, val)
+        
+        self.color = get_vehicle_color(vehicle_type)
 
     def init_properties(self):
         self.sqrt_ab = 2*np.sqrt(self.a_max*self.b_max)
@@ -56,4 +79,31 @@ class Vehicle:
 
         if self.stopped: 
             self.a = -self.b_max*self.v/self.v_max
-        
+
+
+class Car(Vehicle):
+    """A standard passenger car."""
+    def __init__(self, config={}):
+        config['vehicle_type'] = VehicleType.CAR
+        super().__init__(config)
+
+
+class Truck(Vehicle):
+    """A heavy goods truck."""
+    def __init__(self, config={}):
+        config['vehicle_type'] = VehicleType.TRUCK
+        super().__init__(config)
+
+
+class Bus(Vehicle):
+    """A passenger bus."""
+    def __init__(self, config={}):
+        config['vehicle_type'] = VehicleType.BUS
+        super().__init__(config)
+
+
+class Motorcycle(Vehicle):
+    """A motorcycle."""
+    def __init__(self, config={}):
+        config['vehicle_type'] = VehicleType.MOTORCYCLE
+        super().__init__(config)

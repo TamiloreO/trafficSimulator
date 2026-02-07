@@ -277,12 +277,15 @@ class Window:
                 position = segment.get_point(progress)
                 heading = segment.get_heading(progress)
 
+                color = getattr(vehicle, 'color', (0, 0, 255, 255))
+                width = getattr(vehicle, 'w', 1.8)
+
                 node = dpg.add_draw_node(parent="Canvas")
                 dpg.draw_line(
                     (0, 0),
                     (vehicle.l, 0),
-                    thickness=1.76*self.zoom,
-                    color=(0, 0, 255),
+                    thickness=width*self.zoom,
+                    color=color,
                     parent=node
                 )
 
