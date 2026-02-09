@@ -149,6 +149,12 @@ class PedestrianCrossing:
         self.width: float = 4.0
         self.length: float = 3.0
         
+        # Additional segment indices that this crossing affects (e.g., opposite lane)
+        # This allows a single crossing to stop vehicles on multiple road segments
+        self.additional_segment_indices: List[int] = []
+        # Position on additional segments (defaults to same as primary if not specified)
+        self.additional_segment_positions: List[float] = []
+        
         # Timing parameters (seconds)
         self.min_green_time: float = 5.0
         self.pedestrian_green_time: float = 8.0
@@ -249,7 +255,7 @@ class PedestrianCrossing:
             CrossingState.VEHICLES_STOPPING
         )
 
-    def get_stop_distance(self, segment: 'Segment') -> float:
+    def get_stop_distance(self, segment: 'Segment', segment_index: Optional[int] = None) -> float:
         """
         Calculate the distance along the segment where vehicles should stop.
         
@@ -258,6 +264,8 @@ class PedestrianCrossing:
         
         Args:
             segment: The road segment containing this crossing.
+            segment_index: Optional index of the segment to get the correct
+                          position for additional segments.
         
         Returns:
             Distance in meters from the segment start to the stop line.
@@ -267,9 +275,40 @@ class PedestrianCrossing:
             return 0.0
         
         segment_length = segment.get_length()
+        
+        # Determine which position to use based on segment index
+        position = self.position
+        if segment_index is not None and segment_index in self.additional_segment_indices:
+            idx = self.additional_segment_indices.index(segment_index)
+            if idx < len(self.additional_segment_positions):
+                position = self.additional_segment_positions[idx]
+            # If no specific position, use the default position
+        
         # Stop 2 meters before the crossing edge
-        stop_position = self.position * segment_length - self.length / 2 - 2.0
+        stop_position = position * segment_length - self.length / 2 - 2.0
         return max(0.0, stop_position)
+
+    def get_all_segment_indices(self) -> List[int]:
+        """
+        Get all segment indices that this crossing affects.
+        
+        Returns:
+            List containing the primary segment index and all additional
+            segment indices.
+        """
+        return [self.segment_index] + list(self.additional_segment_indices)
+
+    def affects_segment(self, segment_index: int) -> bool:
+        """
+        Check if this crossing affects a given segment.
+        
+        Args:
+            segment_index: The index of the segment to check.
+        
+        Returns:
+            True if vehicles on this segment should respect this crossing.
+        """
+        return segment_index == self.segment_index or segment_index in self.additional_segment_indices
 
     def update(self, dt: float) -> None:
         """

@@ -285,35 +285,51 @@ class Window:
     def draw_crossings(self):
         """Draw pedestrian crossings on the road."""
         for crossing in self.simulation.crossings:
-            segment = self.simulation.segments[crossing.segment_index]
-            segment_length = segment.get_length()
+            # Draw on primary segment
+            self._draw_crossing_on_segment(crossing, crossing.segment_index, crossing.position)
             
-            # Get position and heading at crossing location
-            center_pos = segment.get_point(crossing.position)
-            heading = segment.get_heading(min(crossing.position, 0.99))
+            # Draw on additional segments
+            additional_indices = getattr(crossing, 'additional_segment_indices', [])
+            additional_positions = getattr(crossing, 'additional_segment_positions', [])
             
-            # Calculate perpendicular direction for crossing width
-            perp_angle = heading + math.pi / 2
+            for i, seg_idx in enumerate(additional_indices):
+                if 0 <= seg_idx < len(self.simulation.segments):
+                    pos = additional_positions[i] if i < len(additional_positions) else crossing.position
+                    self._draw_crossing_on_segment(crossing, seg_idx, pos)
+
+    def _draw_crossing_on_segment(self, crossing, segment_index: int, position: float):
+        """Draw a crossing on a specific segment at a given position."""
+        if segment_index < 0 or segment_index >= len(self.simulation.segments):
+            return
             
-            # Draw based on crossing type
-            if crossing.crossing_type == CrossingType.ZEBRA:
-                self._draw_zebra_stripes(center_pos, heading, perp_angle, crossing)
-                self._draw_belisha_beacons(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == CrossingType.PELICAN:
-                self._draw_signal_crossing_stripes(center_pos, heading, perp_angle, crossing)
-                self._draw_traffic_signals(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == CrossingType.PUFFIN:
-                self._draw_signal_crossing_stripes(center_pos, heading, perp_angle, crossing)
-                self._draw_traffic_signals(center_pos, perp_angle, crossing)
-                self._draw_sensors(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == CrossingType.TOUCAN:
-                self._draw_toucan_stripes(center_pos, heading, perp_angle, crossing)
-                self._draw_traffic_signals(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == CrossingType.PEGASUS:
-                self._draw_pegasus_stripes(center_pos, heading, perp_angle, crossing)
-                self._draw_traffic_signals(center_pos, perp_angle, crossing)
-            else:
-                self._draw_generic_crossing(center_pos, heading, perp_angle, crossing)
+        segment = self.simulation.segments[segment_index]
+        
+        # Get position and heading at crossing location
+        center_pos = segment.get_point(position)
+        heading = segment.get_heading(min(position, 0.99))
+        
+        # Calculate perpendicular direction for crossing width
+        perp_angle = heading + math.pi / 2
+        
+        # Draw based on crossing type
+        if crossing.crossing_type == CrossingType.ZEBRA:
+            self._draw_zebra_stripes(center_pos, heading, perp_angle, crossing)
+            self._draw_belisha_beacons(center_pos, perp_angle, crossing)
+        elif crossing.crossing_type == CrossingType.PELICAN:
+            self._draw_signal_crossing_stripes(center_pos, heading, perp_angle, crossing)
+            self._draw_traffic_signals(center_pos, perp_angle, crossing)
+        elif crossing.crossing_type == CrossingType.PUFFIN:
+            self._draw_signal_crossing_stripes(center_pos, heading, perp_angle, crossing)
+            self._draw_traffic_signals(center_pos, perp_angle, crossing)
+            self._draw_sensors(center_pos, perp_angle, crossing)
+        elif crossing.crossing_type == CrossingType.TOUCAN:
+            self._draw_toucan_stripes(center_pos, heading, perp_angle, crossing)
+            self._draw_traffic_signals(center_pos, perp_angle, crossing)
+        elif crossing.crossing_type == CrossingType.PEGASUS:
+            self._draw_pegasus_stripes(center_pos, heading, perp_angle, crossing)
+            self._draw_traffic_signals(center_pos, perp_angle, crossing)
+        else:
+            self._draw_generic_crossing(center_pos, heading, perp_angle, crossing)
 
     def _draw_zebra_stripes(self, center_pos, heading, perp_angle, crossing):
         """Draw black and white zebra stripes."""

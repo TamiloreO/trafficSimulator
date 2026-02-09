@@ -322,6 +322,8 @@ class Simulation:
         self,
         segment_index: int,
         position: float = 0.5,
+        additional_segments: Optional[List[int]] = None,
+        additional_positions: Optional[List[float]] = None,
         **kwargs: Any
     ) -> int:
         """
@@ -331,9 +333,13 @@ class Simulation:
         when pedestrians are present.
         
         Args:
-            segment_index: Index of the road segment for this crossing.
-            position: Position along segment as fraction (0.0 to 1.0).
+            segment_index: Index of the primary road segment for this crossing.
+            position: Position along primary segment as fraction (0.0 to 1.0).
                      Default is 0.5 (middle of segment).
+            additional_segments: Optional list of additional segment indices
+                                that this crossing also affects (e.g., opposite lane).
+            additional_positions: Optional list of positions for additional segments.
+                                 If not provided, uses the same position as primary.
             **kwargs: Additional configuration parameters including:
                      - 'width' (float): Crossing width in meters
                      - 'length' (float): Crossing length in meters
@@ -342,9 +348,21 @@ class Simulation:
             Index of the created crossing in the crossings list.
         
         Example:
-            >>> crossing_idx = sim.create_zebra_crossing(0, position=0.5, width=6.0)
+            >>> # Crossing affecting both lanes of a two-way road
+            >>> crossing_idx = sim.create_zebra_crossing(
+            ...     segment_index=0, position=0.5,
+            ...     additional_segments=[1], additional_positions=[0.5],
+            ...     width=6.0
+            ... )
         """
         config = {'segment_index': segment_index, 'position': position, **kwargs}
+        if additional_segments:
+            config['additional_segment_indices'] = additional_segments
+        if additional_positions:
+            config['additional_segment_positions'] = additional_positions
+        elif additional_segments:
+            # Default to same position for all additional segments
+            config['additional_segment_positions'] = [position] * len(additional_segments)
         crossing = ZebraCrossing(config)
         return self.add_crossing(crossing)
 
@@ -352,6 +370,8 @@ class Simulation:
         self,
         segment_index: int,
         position: float = 0.5,
+        additional_segments: Optional[List[int]] = None,
+        additional_positions: Optional[List[float]] = None,
         **kwargs: Any
     ) -> int:
         """
@@ -361,14 +381,22 @@ class Simulation:
         and a flashing amber phase.
         
         Args:
-            segment_index: Index of the road segment for this crossing.
+            segment_index: Index of the primary road segment for this crossing.
             position: Position along segment as fraction (0.0 to 1.0).
+            additional_segments: Optional list of additional segment indices.
+            additional_positions: Optional list of positions for additional segments.
             **kwargs: Additional configuration parameters.
         
         Returns:
             Index of the created crossing in the crossings list.
         """
         config = {'segment_index': segment_index, 'position': position, **kwargs}
+        if additional_segments:
+            config['additional_segment_indices'] = additional_segments
+        if additional_positions:
+            config['additional_segment_positions'] = additional_positions
+        elif additional_segments:
+            config['additional_segment_positions'] = [position] * len(additional_segments)
         crossing = PelicanCrossing(config)
         return self.add_crossing(crossing)
 
@@ -376,6 +404,8 @@ class Simulation:
         self,
         segment_index: int,
         position: float = 0.5,
+        additional_segments: Optional[List[int]] = None,
+        additional_positions: Optional[List[float]] = None,
         **kwargs: Any
     ) -> int:
         """
@@ -385,14 +415,22 @@ class Simulation:
         extend crossing time for slow pedestrians.
         
         Args:
-            segment_index: Index of the road segment for this crossing.
+            segment_index: Index of the primary road segment for this crossing.
             position: Position along segment as fraction (0.0 to 1.0).
+            additional_segments: Optional list of additional segment indices.
+            additional_positions: Optional list of positions for additional segments.
             **kwargs: Additional configuration parameters.
         
         Returns:
             Index of the created crossing in the crossings list.
         """
         config = {'segment_index': segment_index, 'position': position, **kwargs}
+        if additional_segments:
+            config['additional_segment_indices'] = additional_segments
+        if additional_positions:
+            config['additional_segment_positions'] = additional_positions
+        elif additional_segments:
+            config['additional_segment_positions'] = [position] * len(additional_segments)
         crossing = PuffinCrossing(config)
         return self.add_crossing(crossing)
 
@@ -400,6 +438,8 @@ class Simulation:
         self,
         segment_index: int,
         position: float = 0.5,
+        additional_segments: Optional[List[int]] = None,
+        additional_positions: Optional[List[float]] = None,
         **kwargs: Any
     ) -> int:
         """
@@ -408,14 +448,22 @@ class Simulation:
         Toucan crossings are shared crossings for pedestrians and cyclists.
         
         Args:
-            segment_index: Index of the road segment for this crossing.
+            segment_index: Index of the primary road segment for this crossing.
             position: Position along segment as fraction (0.0 to 1.0).
+            additional_segments: Optional list of additional segment indices.
+            additional_positions: Optional list of positions for additional segments.
             **kwargs: Additional configuration parameters.
         
         Returns:
             Index of the created crossing in the crossings list.
         """
         config = {'segment_index': segment_index, 'position': position, **kwargs}
+        if additional_segments:
+            config['additional_segment_indices'] = additional_segments
+        if additional_positions:
+            config['additional_segment_positions'] = additional_positions
+        elif additional_segments:
+            config['additional_segment_positions'] = [position] * len(additional_segments)
         crossing = ToucanCrossing(config)
         return self.add_crossing(crossing)
 
@@ -423,6 +471,8 @@ class Simulation:
         self,
         segment_index: int,
         position: float = 0.5,
+        additional_segments: Optional[List[int]] = None,
+        additional_positions: Optional[List[float]] = None,
         **kwargs: Any
     ) -> int:
         """
@@ -432,14 +482,22 @@ class Simulation:
         pedestrians and cyclists.
         
         Args:
-            segment_index: Index of the road segment for this crossing.
+            segment_index: Index of the primary road segment for this crossing.
             position: Position along segment as fraction (0.0 to 1.0).
+            additional_segments: Optional list of additional segment indices.
+            additional_positions: Optional list of positions for additional segments.
             **kwargs: Additional configuration parameters.
         
         Returns:
             Index of the created crossing in the crossings list.
         """
         config = {'segment_index': segment_index, 'position': position, **kwargs}
+        if additional_segments:
+            config['additional_segment_indices'] = additional_segments
+        if additional_positions:
+            config['additional_segment_positions'] = additional_positions
+        elif additional_segments:
+            config['additional_segment_positions'] = [position] * len(additional_segments)
         crossing = PegasusCrossing(config)
         return self.add_crossing(crossing)
 
@@ -461,20 +519,22 @@ class Simulation:
 
     def _get_crossings_for_segment(self, segment_index: int) -> List[PedestrianCrossing]:
         """
-        Get all crossings on a specific road segment.
+        Get all crossings that affect a specific road segment.
         
         Args:
             segment_index: Index of the segment to query.
         
         Returns:
-            List of crossings that are located on the specified segment.
+            List of crossings that affect the specified segment, including
+            crossings where this segment is listed as an additional segment.
         """
-        return [c for c in self.crossings if c.segment_index == segment_index]
+        return [c for c in self.crossings if c.affects_segment(segment_index)]
 
     def _create_virtual_lead_for_crossing(
         self,
         crossing: PedestrianCrossing,
-        segment: Segment
+        segment: Segment,
+        segment_index: int
     ) -> VirtualLead:
         """
         Create a virtual stopped vehicle at a crossing position.
@@ -486,11 +546,12 @@ class Simulation:
         Args:
             crossing: The crossing requiring vehicles to stop.
             segment: The road segment containing the crossing.
+            segment_index: Index of the segment (for multi-segment crossings).
         
         Returns:
             A VirtualLead positioned at the crossing's stop line.
         """
-        stop_distance = crossing.get_stop_distance(segment)
+        stop_distance = crossing.get_stop_distance(segment, segment_index)
         return VirtualLead(stop_distance, l=0)
 
     def _update_vehicle_on_segment(
@@ -498,7 +559,8 @@ class Simulation:
         vehicle: Vehicle,
         lead_vehicle: Optional[Vehicle],
         active_crossing: Optional[PedestrianCrossing],
-        segment: Segment
+        segment: Segment,
+        segment_index: int
     ) -> None:
         """
         Update a single vehicle considering crossing and lead vehicle.
@@ -511,14 +573,15 @@ class Simulation:
             lead_vehicle: The vehicle ahead (if any).
             active_crossing: An active crossing on this segment (if any).
             segment: The road segment the vehicle is on.
+            segment_index: Index of the segment (for multi-segment crossings).
         """
         if active_crossing is not None:
-            stop_distance = active_crossing.get_stop_distance(segment)
+            stop_distance = active_crossing.get_stop_distance(segment, segment_index)
             
             # Only consider stopping if vehicle hasn't passed the crossing
             if vehicle.x < stop_distance:
                 virtual_lead = self._create_virtual_lead_for_crossing(
-                    active_crossing, segment
+                    active_crossing, segment, segment_index
                 )
                 
                 if lead_vehicle is not None:
@@ -573,7 +636,7 @@ class Simulation:
             
             if first_vehicle is not None:
                 self._update_vehicle_on_segment(
-                    first_vehicle, None, active_crossing, segment
+                    first_vehicle, None, active_crossing, segment, seg_idx
                 )
 
             # Update following vehicles
@@ -586,7 +649,7 @@ class Simulation:
                 
                 if curr_vehicle is not None:
                     self._update_vehicle_on_segment(
-                        curr_vehicle, prev_vehicle, active_crossing, segment
+                        curr_vehicle, prev_vehicle, active_crossing, segment, seg_idx
                     )
 
         # Check roads for out of bounds vehicle
