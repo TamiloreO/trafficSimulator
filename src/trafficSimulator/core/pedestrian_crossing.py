@@ -144,7 +144,8 @@ class PedestrianCrossing:
         Called during __init__ before config overrides are applied.
         """
         self.id: uuid.UUID = uuid.uuid4()
-        self.segment_index: int = 0
+        self.segment_index: int = 0  # Primary segment (kept for backward compatibility)
+        self.segment_indices: List[int] = []  # All segments this crossing affects
         self.position: float = 0.5
         self.width: float = 4.0
         self.length: float = 3.0
@@ -170,11 +171,40 @@ class PedestrianCrossing:
         
         Override in subclasses to set crossing_type and type-specific
         attributes like has_signals, has_button, has_sensors, etc.
+        Also ensures segment_indices includes the primary segment_index.
         """
         self.crossing_type: CrossingType = CrossingType.GENERIC
         self.has_signals: bool = False
         self.has_button: bool = False
         self.has_sensors: bool = False
+        
+        # Ensure segment_indices is populated
+        self._normalize_segment_indices()
+    
+    def _normalize_segment_indices(self) -> None:
+        """
+        Ensure segment_indices contains at least the primary segment_index.
+        
+        If segment_indices was not explicitly set, initializes it with
+        the primary segment_index. If segment_indices was set, ensures
+        segment_index is also in the list.
+        """
+        if not self.segment_indices:
+            self.segment_indices = [self.segment_index]
+        elif self.segment_index not in self.segment_indices:
+            self.segment_indices.insert(0, self.segment_index)
+    
+    def affects_segment(self, segment_index: int) -> bool:
+        """
+        Check if this crossing affects a given segment.
+        
+        Args:
+            segment_index: Index of the segment to check.
+            
+        Returns:
+            True if vehicles on this segment should respect this crossing.
+        """
+        return segment_index in self.segment_indices
 
     def get_crossing_length(self) -> float:
         """
@@ -389,6 +419,7 @@ class ZebraCrossing(PedestrianCrossing):
         self.has_belisha_beacons: bool = True
         # Zebra crossings are always ready for pedestrians
         self.state = CrossingState.PEDESTRIANS_GO
+        self._normalize_segment_indices()
 
     def should_vehicles_stop(self) -> bool:
         """
@@ -468,6 +499,7 @@ class PelicanCrossing(PedestrianCrossing):
         self.has_button: bool = True
         self.has_sensors: bool = False
         self.flashing_amber_time: float = 6.0
+        self._normalize_segment_indices()
 
     def _update_state_machine(self) -> None:
         """
@@ -549,6 +581,7 @@ class PuffinCrossing(PedestrianCrossing):
         self.has_sensors: bool = True
         self.max_extension_time: float = 15.0
         self.total_extended_time: float = 0.0
+        self._normalize_segment_indices()
 
     def _update_state_machine(self) -> None:
         """
@@ -648,6 +681,7 @@ class ToucanCrossing(PedestrianCrossing):
         self.has_button: bool = True
         self.has_sensors: bool = True
         self.allows_cyclists: bool = True
+        self._normalize_segment_indices()
 
     def _update_state_machine(self) -> None:
         """
@@ -737,6 +771,7 @@ class PegasusCrossing(PedestrianCrossing):
         self.has_high_button: bool = True  # For horse riders
         self.has_sensors: bool = True
         self.allows_horses: bool = True
+        self._normalize_segment_indices()
 
     def _update_state_machine(self) -> None:
         """

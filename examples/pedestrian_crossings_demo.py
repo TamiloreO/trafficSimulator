@@ -5,6 +5,9 @@ Demonstration of different pedestrian crossing types:
 - Puffin Crossing: Intelligent crossing with pedestrian sensors
 - Toucan Crossing: Shared crossing for pedestrians and cyclists
 - Pegasus Crossing: Wide crossing for horse riders
+
+Each road has two lanes (segments), and crossings span both lanes so vehicles
+traveling in both directions will stop for pedestrians.
 """
 import trafficSimulator as ts
 
@@ -15,32 +18,42 @@ road_length = 150
 road_spacing = 25
 lane_width = 3.5
 
-# Road 1 - Zebra Crossing
+# Road 1 - Zebra Crossing (segments 0, 1)
 sim.create_segment((-road_length/2, 0), (road_length/2, 0))
 sim.create_segment((road_length/2, -lane_width), (-road_length/2, -lane_width))
 
-# Road 2 - Pelican Crossing  
+# Road 2 - Pelican Crossing (segments 2, 3)
 sim.create_segment((-road_length/2, road_spacing), (road_length/2, road_spacing))
 sim.create_segment((road_length/2, road_spacing - lane_width), (-road_length/2, road_spacing - lane_width))
 
-# Road 3 - Puffin Crossing
+# Road 3 - Puffin Crossing (segments 4, 5)
 sim.create_segment((-road_length/2, 2*road_spacing), (road_length/2, 2*road_spacing))
 sim.create_segment((road_length/2, 2*road_spacing - lane_width), (-road_length/2, 2*road_spacing - lane_width))
 
-# Road 4 - Toucan Crossing
+# Road 4 - Toucan Crossing (segments 6, 7)
 sim.create_segment((-road_length/2, 3*road_spacing), (road_length/2, 3*road_spacing))
 sim.create_segment((road_length/2, 3*road_spacing - lane_width), (-road_length/2, 3*road_spacing - lane_width))
 
-# Road 5 - Pegasus Crossing
+# Road 5 - Pegasus Crossing (segments 8, 9)
 sim.create_segment((-road_length/2, 4*road_spacing), (road_length/2, 4*road_spacing))
 sim.create_segment((road_length/2, 4*road_spacing - lane_width), (-road_length/2, 4*road_spacing - lane_width))
 
-# Add crossings at the middle of each road
-zebra_idx = sim.create_zebra_crossing(segment_index=0, position=0.5, width=lane_width*2)
-pelican_idx = sim.create_pelican_crossing(segment_index=2, position=0.5, width=lane_width*2)
-puffin_idx = sim.create_puffin_crossing(segment_index=4, position=0.5, width=lane_width*2)
-toucan_idx = sim.create_toucan_crossing(segment_index=6, position=0.5, width=lane_width*2)
-pegasus_idx = sim.create_pegasus_crossing(segment_index=8, position=0.5, width=lane_width*2)
+# Add crossings at the middle of each road - each crossing affects both lanes
+zebra_idx = sim.create_zebra_crossing(
+    segment_index=0, position=0.5, width=lane_width*2, segment_indices=[0, 1]
+)
+pelican_idx = sim.create_pelican_crossing(
+    segment_index=2, position=0.5, width=lane_width*2, segment_indices=[2, 3]
+)
+puffin_idx = sim.create_puffin_crossing(
+    segment_index=4, position=0.5, width=lane_width*2, segment_indices=[4, 5]
+)
+toucan_idx = sim.create_toucan_crossing(
+    segment_index=6, position=0.5, width=lane_width*2, segment_indices=[6, 7]
+)
+pegasus_idx = sim.create_pegasus_crossing(
+    segment_index=8, position=0.5, width=lane_width*2, segment_indices=[8, 9]
+)
 
 # Vehicle generators for all roads
 sim.create_vehicle_generator(
