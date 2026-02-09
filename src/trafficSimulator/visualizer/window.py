@@ -1,6 +1,6 @@
 import dearpygui.dearpygui as dpg
 import math
-from ..core.pedestrian_crossing import CrossingState
+from ..core.pedestrian_crossing import CrossingState, CrossingType
 
 
 class Window:
@@ -282,20 +282,20 @@ class Window:
             perp_angle = heading + math.pi / 2
             
             # Draw based on crossing type
-            if crossing.crossing_type == 'zebra':
+            if crossing.crossing_type == CrossingType.ZEBRA:
                 self._draw_zebra_stripes(center_pos, heading, perp_angle, crossing)
                 self._draw_belisha_beacons(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == 'pelican':
+            elif crossing.crossing_type == CrossingType.PELICAN:
                 self._draw_signal_crossing_stripes(center_pos, heading, perp_angle, crossing)
                 self._draw_traffic_signals(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == 'puffin':
+            elif crossing.crossing_type == CrossingType.PUFFIN:
                 self._draw_signal_crossing_stripes(center_pos, heading, perp_angle, crossing)
                 self._draw_traffic_signals(center_pos, perp_angle, crossing)
                 self._draw_sensors(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == 'toucan':
+            elif crossing.crossing_type == CrossingType.TOUCAN:
                 self._draw_toucan_stripes(center_pos, heading, perp_angle, crossing)
                 self._draw_traffic_signals(center_pos, perp_angle, crossing)
-            elif crossing.crossing_type == 'pegasus':
+            elif crossing.crossing_type == CrossingType.PEGASUS:
                 self._draw_pegasus_stripes(center_pos, heading, perp_angle, crossing)
                 self._draw_traffic_signals(center_pos, perp_angle, crossing)
             else:
